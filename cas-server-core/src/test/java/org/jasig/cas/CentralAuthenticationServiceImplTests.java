@@ -482,4 +482,30 @@ public class CentralAuthenticationServiceImplTests extends AbstractCentralAuthen
         // destroy to mark expired and then delete : the opposite would fail with a "No ticket to update" error from the registry
         cas.destroyTicketGrantingTicket(tgt.getId());
     }
+
+    /**
+    * This Test checks if the TGT may produces an memory leak with its services list.
+    * Please see https://github.com/Jasig/cas/issues/493
+    *
+    * @throws Exception
+    */
+    @Test
+    public void testGrantServiceTicketNotComulateServices() throws Exception {
+        final String ticketGrantingTicket = getCentralAuthenticationService().createTicketGrantingTicket(
+                TestUtils.getCredentialsWithSameUsernameAndPassword());
+        for (int i = 0; i < 100; i++) {
+            getCentralAuthenticationService()
+                    .grantServiceTicket(ticketGrantingTicket, TestUtils.getService(), TestUtils.getCredentialsWithSameUsernameAndPassword());
+        }
+        final TicketGrantingTicket tgt = (TicketGrantingTicket) getTicketRegistry().getTicket(ticketGrantingTicket, TicketGrantingTicket.class);
+
+        //Unfortunately the to be tested field is an private field that has not getter. That why we need to hack us into it by reflection.
+        Field servicesField = tgt.getClass().getDeclaredField("services");
+        servicesField.setAccessible(true);
+        HashMap servicesMap = (HashMap) servicesField.get(tgt);
+
+        Assert.assertNotNull(servicesMap);
+        //if the fix would not be apllied the size would be 100
+        Assert.assertEquals(1, servicesMap.size());
+    }
 }

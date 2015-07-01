@@ -153,7 +153,7 @@ public final class TicketGrantingTicketImpl extends AbstractTicket implements Ti
         final List<Authentication> authentications = getChainedAuthentications();
         service.setPrincipal(authentications.get(authentications.size()-1).getPrincipal());
 
-        this.services.put(id, service);
+        this.services.put(service.getId(), service);
 
         return serviceTicket;
     }
